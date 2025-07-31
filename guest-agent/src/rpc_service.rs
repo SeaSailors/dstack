@@ -10,7 +10,7 @@ use dstack_guest_agent_rpc::{
     GetQuoteResponse, GetTlsKeyArgs, GetTlsKeyResponse, RawQuoteArgs, TdxQuoteArgs,
     TdxQuoteResponse, WorkerVersion,
 };
-use dstack_types::{AppKeys, SysConfig};
+use dstack_types::{AppKeys, SysConfig, VmConfig};
 use fs_err as fs;
 use k256::ecdsa::SigningKey;
 use ra_rpc::{Attestation, CallContext, RpcCall};
@@ -44,12 +44,26 @@ impl AppState {
     pub async fn new(config: Config) -> Result<Self> {
         let keys: AppKeys = serde_json::from_str(&fs::read_to_string(&config.keys_file)?)
             .context("Failed to parse app keys")?;
-        let sys_config: SysConfig =
-            serde_json::from_str(&fs::read_to_string(&config.sys_config_file)?)
-                .context("Failed to parse VM config")?;
-        let vm_config = sys_config.vm_config;
+        // let sys_config: SysConfig =
+        //     serde_json::from_str(&fs::read_to_string(&config.sys_config_file)?)
+        //         .context("Failed to parse VM config")?;
+        // let vm_config = sys_config.vm_config;
+        let vm_config = VmConfig {
+            spec_version: 1,
+            os_image_hash: b"0x".to_vec(),
+            cpu_count: 8,
+            memory_size: 32,
+            qemu_single_pass_add_pages: false,
+            pic: false,
+            pci_hole64_size: 0,
+            hugepages: false,
+            num_gpus: 0,
+            num_nvswitches: 0,
+            hotplug_off: false,
+        };
+        let vm_config_str = serde_json::to_string(&vm_config).expect("serialize vm config json");
         let cert_client =
-            CertRequestClient::create(&keys, config.pccs_url.as_deref(), vm_config.clone())
+            CertRequestClient::create(&keys, config.pccs_url.as_deref(), vm_config_str.clone())
                 .await
                 .context("Failed to create cert signer")?;
         let key = KeyPair::generate().context("Failed to generate demo key")?;
@@ -75,7 +89,7 @@ impl AppState {
                 keys,
                 cert_client,
                 demo_cert,
-                vm_config,
+                vm_config: vm_config_str,
             }),
         })
     }
