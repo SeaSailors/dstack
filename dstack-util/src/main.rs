@@ -364,7 +364,6 @@ fn make_app_keys(
     let report_data = QuoteContentType::RaTlsCert.to_report_data(&pubkey);
     let (_, quote) = att::get_quote(&report_data, None).context("Failed to get quote")?;
     // TODO: emit system setup info and app info to rtmr3 later
-    extend_rtmr3("demo", &[])?;
     let event_logs = att::eventlog::read_event_logs().context("Failed to read event logs")?;
     let event_log = serde_json::to_vec(&event_logs).context("Failed to serialize event logs")?;
     let req = CertRequest::builder()
