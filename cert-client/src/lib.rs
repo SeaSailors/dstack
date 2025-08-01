@@ -100,10 +100,9 @@ impl CertRequestClient {
         let report_data = QuoteContentType::RaTlsCert.to_report_data(&pubkey);
         let (quote, event_log) = if !no_ra {
             let (_, quote) = get_quote(&report_data, None).context("Failed to get quote")?;
-            // let event_log = read_event_logs().context("Failed to decode event log")?;
-            // let event_log =
-            //     serde_json::to_vec(&event_log).context("Failed to serialize event log")?;
-            let event_log = vec![];
+            let event_log = read_event_logs().context("Failed to decode event log")?;
+            let event_log =
+                serde_json::to_vec(&event_log).context("Failed to serialize event log")?;
             (quote, event_log)
         } else {
             (vec![], vec![])

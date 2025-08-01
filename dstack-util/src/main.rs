@@ -21,7 +21,7 @@ use std::{
     path::PathBuf,
 };
 use system_setup::{cmd_sys_setup, SetupArgs};
-use tdx_attest as att;
+use tdx_attest::{self as att, extend_rtmr3};
 use utils::AppKeys;
 
 mod crypto;
@@ -364,12 +364,13 @@ fn make_app_keys(
     let report_data = QuoteContentType::RaTlsCert.to_report_data(&pubkey);
     let (_, quote) = att::get_quote(&report_data, None).context("Failed to get quote")?;
     // TODO: emit system setup info and app info to rtmr3 later
-    // let event_logs = att::eventlog::read_event_logs().context("Failed to read event logs")?;
-    // let event_log = serde_json::to_vec(&event_logs).context("Failed to serialize event logs")?;
+    extend_rtmr3("demo", &[])?;
+    let event_logs = att::eventlog::read_event_logs().context("Failed to read event logs")?;
+    let event_log = serde_json::to_vec(&event_logs).context("Failed to serialize event logs")?;
     let req = CertRequest::builder()
         .subject("App Root Cert")
         .quote(&quote)
-        // .event_log(&event_log)
+        .event_log(&event_log)
         .key(&app_key)
         .ca_level(ca_level)
         .build();
